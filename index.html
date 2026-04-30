@@ -482,6 +482,16 @@ button.primary:hover { background: var(--accent-ink); border-color: var(--accent
   color: var(--ink-3);
 }
 
+.result-formula {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  letter-spacing: 0.01em;
+}
+
 .result.accent {
   background: var(--accent-soft);
   border-color: #c8d8f5;
@@ -603,26 +613,58 @@ button.primary:hover { background: var(--accent-ink); border-color: var(--accent
   letter-spacing: -0.015em;
 }
 
-.cajones-display {
+.cajones-card .info-title { margin-bottom: 14px; }
+
+.cajones-formula {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 10px;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cajones-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 6px 10px;
+  background: var(--bg-soft);
+  border-radius: 6px;
+}
+
+.cajones-row.total {
+  background: var(--accent-soft);
+  padding: 12px;
+  margin-top: 4px;
+}
+
+.cajones-label {
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.cajones-row.total .cajones-label {
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.cajones-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
 }
 
 .cajones-num {
-  font-size: 38px;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 28px !important;
   font-weight: 700;
   line-height: 1;
-  color: var(--accent);
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-}
-
-.cajones-unit {
-  font-size: 12px;
-  color: var(--ink-2);
-  font-weight: 500;
+  color: var(--accent) !important;
+  letter-spacing: -0.025em;
 }
 
 .cajones-norma {
@@ -632,6 +674,30 @@ button.primary:hover { background: var(--accent-ink); border-color: var(--accent
   padding-top: 10px;
   border-top: 1px solid var(--line);
   word-break: break-word;
+  line-height: 1.5;
+}
+
+.step-btn {
+  width: 44px;
+  height: 48px;
+  background: var(--bg-soft);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 500;
+  flex-shrink: 0;
+  min-height: 48px;
+}
+
+.step-btn:hover { background: var(--bg-card); border-color: var(--ink-3); opacity: 1; }
+
+.caja-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 6px;
 }
 
 /* WARNING */
@@ -868,21 +934,25 @@ footer strong { color: var(--ink); font-weight: 600; }
         <div class="result-key">Desplante (COS)</div>
         <div class="result-val" id="desplante">—</div>
         <div class="result-unit">m² planta baja</div>
+        <div class="result-formula" id="desplante-formula">—</div>
       </div>
       <div class="result accent">
         <div class="result-key">Construcción (CUS)</div>
         <div class="result-val" id="construccion">—</div>
         <div class="result-unit">m² totales</div>
+        <div class="result-formula" id="construccion-formula">—</div>
       </div>
       <div class="result">
         <div class="result-key">Área verde (CAV)</div>
         <div class="result-val" id="area-verde">—</div>
         <div class="result-unit">m² jardín</div>
+        <div class="result-formula" id="verde-formula">—</div>
       </div>
       <div class="result">
         <div class="result-key">Niveles aprox.</div>
         <div class="result-val" id="niveles">—</div>
         <div class="result-unit">a 3 m c/u</div>
+        <div class="result-formula" id="niveles-formula">—</div>
       </div>
     </div>
     <div class="warning" id="warning"><span id="warning-text"></span></div>
@@ -922,12 +992,34 @@ footer strong { color: var(--ink); font-weight: 600; }
           <div class="rem-item"><div class="rem-label">Posterior</div><div class="rem-value" id="rem-post">—</div></div>
         </div>
       </div>
-      <div class="info-card">
+      <div class="info-card cajones-card">
         <div class="info-title">Cajones mínimos</div>
-        <div class="cajones-display">
-          <div class="cajones-num" id="cajones-num">—</div>
-          <div class="cajones-unit">cajones</div>
+
+        <div id="unidades-field" style="display:none; margin-bottom: 14px;">
+          <label for="unidades">Número de unidades</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button type="button" class="step-btn" onclick="cambiarUnidades(-1)" aria-label="Reducir unidades">−</button>
+            <input type="number" id="unidades" value="1" min="1" step="1" inputmode="numeric" style="text-align:center;">
+            <button type="button" class="step-btn" onclick="cambiarUnidades(1)" aria-label="Aumentar unidades">+</button>
+          </div>
+          <div class="caja-hint" id="unidades-hint">—</div>
         </div>
+
+        <div class="cajones-formula" id="cajones-formula">
+          <div class="cajones-row">
+            <span class="cajones-label" id="caj-row-1-label">—</span>
+            <span class="cajones-val" id="caj-row-1-val">—</span>
+          </div>
+          <div class="cajones-row">
+            <span class="cajones-label" id="caj-row-2-label">—</span>
+            <span class="cajones-val" id="caj-row-2-val">—</span>
+          </div>
+          <div class="cajones-row total">
+            <span class="cajones-label">Cajones requeridos</span>
+            <span class="cajones-val cajones-num" id="cajones-num">—</span>
+          </div>
+        </div>
+
         <div class="cajones-norma" id="cajones-norma">—</div>
       </div>
     </div>
@@ -942,7 +1034,7 @@ footer strong { color: var(--ink); font-weight: 600; }
   <footer>
     <div>Los coeficientes mostrados son referenciales para anteproyecto. Antes de proyecto ejecutivo, verificar con la Constancia de Uso de Suelo oficial del municipio. La detección por GPS usa centroides aproximados; en colindancias puede asignar al municipio vecino.</div>
     <div class="footer-credit">
-      <span><strong>Calculadora ZMM</strong> · v 1.2</span>
+      <span><strong>Calculadora ZMM</strong> · v 1.3</span>
       <span>Mobile-first</span>
     </div>
   </footer>
@@ -1135,7 +1227,18 @@ function poblarZonas() {
   });
   document.getElementById('croquis-mun').textContent = m.nombre;
   if (coordsActuales) document.getElementById('btn-visor').style.display = 'inline-flex';
+  precargarUnidadesSugeridas();
   calcular();
+}
+
+function precargarUnidadesSugeridas() {
+  const m = datos[munSel.value];
+  const z = m.zonas[zonaSel.value];
+  if (!z || z.cajTipo !== 'multi') return;
+  const { ter } = obtenerDatosPredio();
+  const constr = ter * z.cus;
+  const sugeridas = Math.max(1, Math.floor(constr / z.areaViv));
+  document.getElementById('unidades').value = sugeridas;
 }
 
 function getCSS(name) {
@@ -1196,18 +1299,46 @@ function dibujarCroquis(frente, fondo, rf, rl, rp, cosArea, cavArea) {
 
 function calcularCajones(z, ter, constr) {
   if (z.cajTipo === "uni") {
-    return { num: z.cajPorViv, detalle: '1 vivienda × ' + z.cajPorViv + ' caj' };
+    return {
+      num: z.cajPorViv,
+      filas: [
+        { label: 'Viviendas', val: '1' },
+        { label: 'Cajones por vivienda', val: z.cajPorViv.toString() }
+      ]
+    };
   }
   if (z.cajTipo === "multi") {
-    const viviendas = Math.max(1, Math.floor(constr / z.areaViv));
-    const num = Math.ceil(viviendas * z.cajPorViv);
-    return { num: num, detalle: viviendas + ' deptos × ' + z.cajPorViv + ' caj' };
+    const sugeridas = Math.max(1, Math.floor(constr / z.areaViv));
+    let unidades = parseInt(document.getElementById('unidades').value) || sugeridas;
+    if (unidades < 1) unidades = 1;
+    const num = Math.ceil(unidades * z.cajPorViv);
+    return {
+      num: num,
+      filas: [
+        { label: 'Unidades (deptos)', val: unidades.toString() },
+        { label: 'Cajones por unidad', val: z.cajPorViv.toString() }
+      ],
+      sugeridas: sugeridas
+    };
   }
   if (z.cajTipo === "const") {
     const num = Math.ceil(constr / z.cajM2);
-    return { num: num, detalle: Math.round(constr) + ' m² ÷ ' + z.cajM2 };
+    return {
+      num: num,
+      filas: [
+        { label: 'Construcción CUS', val: Math.round(constr).toLocaleString() + ' m²' },
+        { label: 'Norma', val: '1 caj / ' + z.cajM2 + ' m²' }
+      ]
+    };
   }
-  return { num: 0, detalle: '—' };
+  return { num: 0, filas: [] };
+}
+
+function cambiarUnidades(delta) {
+  const inp = document.getElementById('unidades');
+  const v = Math.max(1, (parseInt(inp.value) || 1) + delta);
+  inp.value = v;
+  calcular();
 }
 
 let modoActual = 'dim';
@@ -1283,13 +1414,42 @@ function calcular() {
   document.getElementById('area-verde').textContent = Math.round(verde).toLocaleString();
   document.getElementById('niveles').textContent = niv;
 
+  // Fórmulas explícitas debajo de cada resultado
+  const terFmt = Math.round(ter).toLocaleString();
+  document.getElementById('desplante-formula').textContent = terFmt + ' × ' + z.cos.toFixed(2);
+  document.getElementById('construccion-formula').textContent = terFmt + ' × ' + z.cus.toFixed(2);
+  document.getElementById('verde-formula').textContent = terFmt + ' × ' + z.cav.toFixed(2);
+  document.getElementById('niveles-formula').textContent = z.alt + ' m ÷ 3 m';
+
   document.getElementById('rem-front').textContent = z.rf + ' m';
   document.getElementById('rem-lat').textContent = z.rl + ' m';
   document.getElementById('rem-post').textContent = z.rp + ' m';
 
+  // Mostrar/ocultar campo de unidades según tipo
+  const unidadesField = document.getElementById('unidades-field');
+  if (z.cajTipo === 'multi') {
+    unidadesField.style.display = '';
+  } else {
+    unidadesField.style.display = 'none';
+  }
+
   const caj = calcularCajones(z, ter, constr);
   document.getElementById('cajones-num').textContent = caj.num;
-  document.getElementById('cajones-norma').textContent = z.caj + ' · ' + caj.detalle;
+  document.getElementById('cajones-norma').textContent = z.caj;
+
+  // Filas de la fórmula de cajones
+  if (caj.filas.length >= 2) {
+    document.getElementById('caj-row-1-label').textContent = caj.filas[0].label;
+    document.getElementById('caj-row-1-val').textContent = caj.filas[0].val;
+    document.getElementById('caj-row-2-label').textContent = caj.filas[1].label;
+    document.getElementById('caj-row-2-val').textContent = caj.filas[1].val;
+  }
+
+  // Hint en el campo de unidades para multifamiliares
+  if (z.cajTipo === 'multi' && caj.sugeridas) {
+    document.getElementById('unidades-hint').textContent =
+      'Sugerido por CUS: ' + caj.sugeridas + ' deptos de ' + z.areaViv + ' m² c/u';
+  }
 
   dibujarCroquis(fr, fo, z.rf, z.rl, z.rp, desp, verde);
 
@@ -1299,7 +1459,8 @@ function calcular() {
     cos: z.cos, cus: z.cus, cav: z.cav, alt: z.alt,
     desp: Math.round(desp), constr: Math.round(constr), verde: Math.round(verde), niv: niv,
     rf: z.rf, rl: z.rl, rp: z.rp,
-    cajones: caj.num, cajNorma: z.caj, cajDetalle: caj.detalle,
+    cajones: caj.num, cajNorma: z.caj,
+    cajFilas: caj.filas,
     coords: coordsActuales
   };
 
@@ -1371,8 +1532,11 @@ function exportarPDF() {
   y += 4;
   sec('Estacionamiento');
   linea('Norma aplicada', e.cajNorma);
-  linea('Detalle del cálculo', e.cajDetalle);
-  linea('Cajones mínimos', e.cajones + ' cajones');
+  if (e.cajFilas && e.cajFilas.length >= 2) {
+    linea(e.cajFilas[0].label, e.cajFilas[0].val);
+    linea(e.cajFilas[1].label, e.cajFilas[1].val);
+  }
+  linea('Cajones requeridos', e.cajones + ' cajones');
 
   doc.setDrawColor(13, 17, 23); doc.setLineWidth(0.5);
   doc.line(20, 250, 196, 250);
@@ -1402,11 +1566,12 @@ function resetForm() {
 }
 
 munSel.addEventListener('change', poblarZonas);
-zonaSel.addEventListener('change', calcular);
-document.getElementById('frente').addEventListener('input', calcular);
-document.getElementById('fondo').addEventListener('input', calcular);
-document.getElementById('terreno-area').addEventListener('input', calcular);
+zonaSel.addEventListener('change', () => { precargarUnidadesSugeridas(); calcular(); });
+document.getElementById('frente').addEventListener('input', () => { precargarUnidadesSugeridas(); calcular(); });
+document.getElementById('fondo').addEventListener('input', () => { precargarUnidadesSugeridas(); calcular(); });
+document.getElementById('terreno-area').addEventListener('input', () => { precargarUnidadesSugeridas(); calcular(); });
 document.getElementById('proporcion').addEventListener('change', calcular);
+document.getElementById('unidades').addEventListener('input', calcular);
 let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(calcular, 150); });
 
