@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Calculadora de coeficientes urbanísticos para Monterrey y municipios conurbados. COS, CUS, CAV, altura máxima, cajones de estacionamiento.">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Calculadora urbanística · ZMM</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f7f8fa;
+  --bg-card: #ffffff;
+  --ink: #0d1117;
+  --ink-2: #4a5057;
+  --ink-3: #8b9097;
+  --ink-4: #c4c8cd;
+  --line: #e8eaed;
+  --line-2: #d6d9dd;
+  --accent: #2563eb;
+  --accent-soft: #eff4ff;
+  --accent-ink: #1d4ed8;
+  --warn-bg: #fff7ec;
+  --warn-line: #f5b95c;
+  --warn-ink: #8a5a18;
+  --terreno: #dbe8f7;
+  --terreno-line: #5b88c2;
+  --construido: #6b7280;
+  --verde: #b8d09a;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+::selection { background: var(--accent); color: #fff; }
+
+.shell {
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 0 18px 32px;
+}
+
+@media (min-width: 700px) {
+  .shell { max-width: 720px; padding: 0 32px 48px; }
+}
+
+/* HEADER */
+header {
+  padding: 24px 0 20px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+  padding-top: calc(20px + env(safe-area-inset-top));
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.brand-text { min-width: 0; }
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1px;
+}
+
+.header-date {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.hero {
+  padding: 8px 0 24px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 28px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+
+@media (min-width: 700px) {
+  h1 { font-size: 36px; }
+}
+
+.hero-sub {
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* SECTIONS */
+section {
+  margin-bottom: 28px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  flex: 1;
+}
+
+.section-aside {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: right;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+@media (min-width: 700px) {
+  .card { padding: 22px; }
+}
+
+/* GPS */
+.gps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gps-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.gps-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gps-icon svg { width: 20px; height: 20px; }
+
+.gps-text { flex: 1; min-width: 0; }
+
+.gps-status {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 2px;
+  word-break: break-word;
+}
+
+.gps-coords {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.gps-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gps-manual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.gps-manual button { grid-column: 1 / -1; }
+
+/* INPUTS */
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.input-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.input-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.field { display: flex; flex-direction: column; }
+
+label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+input, select {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  background: var(--bg-card);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-variant-numeric: tabular-nums;
+  min-height: 48px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+input::placeholder { color: var(--ink-4); font-weight: 400; }
+
+select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%238b9097' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+/* BUTTONS */
+button {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  background: var(--ink);
+  color: #fff;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  user-select: none;
+}
+
+button:hover { opacity: 0.92; }
+button:active { transform: scale(0.98); }
+button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+button.secondary {
+  background: var(--bg-card);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+button.secondary:hover { background: var(--bg-soft); border-color: var(--ink-3); }
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+button.primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+
+/* COEFICIENTES */
+.coef-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 480px) {
+  .coef-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.coef {
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+}
+
+.coef-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.coef-val {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* RESULTS */
+.results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.result {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.result-key {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.result-val {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.result-unit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.result.accent {
+  background: var(--accent-soft);
+  border-color: #c8d8f5;
+}
+.result.accent .result-val { color: var(--accent-ink); }
+
+/* CROQUIS */
+.croquis-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.croquis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.croquis-mun {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.croquis-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+#croquis-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 240px;
+  background: var(--bg-soft);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.legend-item {
+  font-size: 11px;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* DUAL */
+.dual-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 600px) {
+  .dual-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.info-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rem-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.rem-item { display: flex; flex-direction: column; gap: 4px; }
+
+.rem-label {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.rem-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+.cajones-display {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cajones-num {
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cajones-unit {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.cajones-norma {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  word-break: break-word;
+}
+
+/* WARNING */
+.warning {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-left: 3px solid var(--warn-line);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  margin-top: 14px;
+  display: none;
+  font-size: 13px;
+  color: var(--warn-ink);
+  line-height: 1.4;
+}
+
+.warning.visible { display: block; }
+
+/* ACTIONS */
+.actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  padding: 12px 0 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  z-index: 9;
+}
+
+@media (min-width: 480px) {
+  .actions { grid-template-columns: 2fr 1fr 1fr; }
+}
+
+/* FOOTER */
+footer {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+.footer-credit {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+footer strong { color: var(--ink); font-weight: 600; }
+
+/* DARK MODE */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --bg-soft: #161b22;
+    --bg-card: #161b22;
+    --ink: #f0f3f6;
+    --ink-2: #b8c0c8;
+    --ink-3: #7d858e;
+    --ink-4: #4a5057;
+    --line: #262d36;
+    --line-2: #353d47;
+    --accent: #4d8aff;
+    --accent-soft: #1a2540;
+    --accent-ink: #7ea7ff;
+    --warn-bg: #2a2114;
+    --warn-line: #c4892a;
+    --warn-ink: #e6b86a;
+    --terreno: #2a3a52;
+    --terreno-line: #6789bd;
+    --construido: #8a9099;
+    --verde: #6f8a52;
+  }
+  .result.accent { border-color: #2a4070; }
+}
+
+/* PRINT */
+@media print {
+  header, .actions, footer { display: none; }
+  body { padding: 0; }
+  section { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <header>
+    <div class="header-row">
+      <div class="brand">
+        <div class="logo">UR</div>
+        <div class="brand-text">
+          <div class="brand-name">Coeficientes urbanísticos</div>
+          <div class="brand-sub">Zona Metropolitana de Monterrey</div>
+        </div>
+      </div>
+      <div class="header-date" id="header-fecha"></div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>Análisis de factibilidad</h1>
+    <p class="hero-sub">Calcula COS, CUS, CAV, altura máxima, remetimientos y cajones de estacionamiento para los nueve municipios de la ZMM.</p>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <span class="section-title">Ubicación</span>
+    </div>
+    <div class="card gps">
+      <div class="gps-info">
+        <div class="gps-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div class="gps-text">
+          <div class="gps-status" id="ubic-status">Sin detectar</div>
+          <div class="gps-coords" id="ubic-coords">— · —</div>
+        </div>
+      </div>
+      <div class="gps-actions">
+        <button class="primary" id="btn-gps" onclick="detectarUbicacion()">Detectar GPS</button>
+        <button class="secondary" id="btn-visor" onclick="abrirVisor()" style="display:none">Visor oficial</button>
+      </div>
+      <div class="gps-manual">
+        <input type="number" id="lat-manual" placeholder="Latitud" step="0.000001" inputmode="decimal">
+        <input type="number" id="lng-manual" placeholder="Longitud" step="0.000001" inputmode="decimal">
+        <button class="secondary" onclick="usarCoordsManual()">Usar coordenadas manuales</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <span class="section-title">Predio y zonificación</span>
+    </div>
+    <div class="card">
+      <div class="input-row" style="margin-bottom:14px">
+        <div class="field">
+          <label for="municipio">Municipio</label>
+          <select id="municipio">
+            <option value="monterrey">Monterrey</option>
+            <option value="sanpedro">San Pedro Garza García</option>
+            <option value="sanicolas">San Nicolás de los Garza</option>
+            <option value="guadalupe">Guadalupe</option>
+            <option value="apodaca">Apodaca</option>
+            <option value="escobedo">Gral. Escobedo</option>
+            <option value="santacatarina">Santa Catarina</option>
+            <option value="garcia">García</option>
+            <option value="juarez">Juárez</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="zona">Uso de suelo / zona</label>
+          <select id="zona"></select>
+        </div>
+      </div>
+      <div class="input-row cols-3">
+        <div class="field">
+          <label for="terreno">Superficie (m²)</label>
+          <input type="number" id="terreno" value="300" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="frente">Frente (m)</label>
+          <input type="number" id="frente" value="15" min="1" step="0.1" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="fondo">Fondo (m)</label>
+          <input type="number" id="fondo" value="20" min="1" step="0.1" inputmode="decimal">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <span class="section-title">Coeficientes</span>
+      <span class="section-aside" id="zona-actual">—</span>
+    </div>
+    <div class="coef-grid">
+      <div class="coef"><div class="coef-key">COS</div><div class="coef-val" id="cos-val">—</div></div>
+      <div class="coef"><div class="coef-key">CUS</div><div class="coef-val" id="cus-val">—</div></div>
+      <div class="coef"><div class="coef-key">CAV</div><div class="coef-val" id="cav-val">—</div></div>
+      <div class="coef"><div class="coef-key">H máx</div><div class="coef-val" id="alt-val">—</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <span class="section-title">Resultados</span>
+    </div>
+    <div class="results">
+      <div class="result">
+        <div class="result-key">Desplante (COS)</div>
+        <div class="result-val" id="desplante">—</div>
+        <div class="result-unit">m² planta baja</div>
+      </div>
+      <div class="result accent">
+        <div class="result-key">Construcción (CUS)</div>
+        <div class="result-val" id="construccion">—</div>
+        <div class="result-unit">m² totales</div>
+      </div>
+      <div class="result">
+        <div class="result-key">Área verde (CAV)</div>
+        <div class="result-val" id="area-verde">—</div>
+        <div class="result-unit">m² jardín</div>
+      </div>
+      <div class="result">
+        <div class="result-key">Niveles aprox.</div>
+        <div class="result-val" id="niveles">—</div>
+        <div class="result-unit">a 3 m c/u</div>
+      </div>
+    </div>
+    <div class="warning" id="warning"><span id="warning-text"></span></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <span class="section-title">Croquis del predio</span>
+      <span class="section-aside">a escala</span>
+    </div>
+    <div class="croquis-card">
+      <div class="croquis-header">
+        <div class="croquis-mun" id="croquis-mun">—</div>
+        <div class="croquis-tag">vista en planta · norte ↑</div>
+      </div>
+      <div id="croquis-container"></div>
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="background:var(--terreno);border:1px solid var(--terreno-line)"></span>Terreno</div>
+        <div class="legend-item"><span class="swatch" style="background:var(--construido)"></span>Desplante</div>
+        <div class="legend-item"><span class="swatch" style="background:var(--verde)"></span>Área verde</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <span class="section-num">06</span>
+      <span class="section-title">Remetimientos y estacionamiento</span>
+    </div>
+    <div class="dual-grid">
+      <div class="info-card">
+        <div class="info-title">Remetimientos típicos</div>
+        <div class="rem-list">
+          <div class="rem-item"><div class="rem-label">Frontal</div><div class="rem-value" id="rem-front">—</div></div>
+          <div class="rem-item"><div class="rem-label">Lateral</div><div class="rem-value" id="rem-lat">—</div></div>
+          <div class="rem-item"><div class="rem-label">Posterior</div><div class="rem-value" id="rem-post">—</div></div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-title">Cajones mínimos</div>
+        <div class="cajones-display">
+          <div class="cajones-num" id="cajones-num">—</div>
+          <div class="cajones-unit">cajones</div>
+        </div>
+        <div class="cajones-norma" id="cajones-norma">—</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="primary" onclick="exportarPDF()">↓ Exportar PDF</button>
+    <button class="secondary" onclick="window.print()">Imprimir</button>
+    <button class="secondary" onclick="resetForm()">Reiniciar</button>
+  </div>
+
+  <footer>
+    <div>Los coeficientes mostrados son referenciales para anteproyecto. Antes de proyecto ejecutivo, verificar con la Constancia de Uso de Suelo oficial del municipio. La detección por GPS usa centroides aproximados; en colindancias puede asignar al municipio vecino.</div>
+    <div class="footer-credit">
+      <span><strong>Calculadora ZMM</strong> · v 1.1</span>
+      <span>Mobile-first</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+const datos = {
+  monterrey: { nombre: "Monterrey", visor: "https://www.implancmty.org/visor/", zonas: {
+    "h-uni-baja": { label: "Habitacional unifamiliar densidad baja", cos: 0.60, cus: 1.20, cav: 0.30, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (120 m²)", cajCalc: m=>Math.ceil(m/120) },
+    "h-uni-media": { label: "Habitacional unifamiliar densidad media", cos: 0.70, cus: 1.60, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi-media": { label: "Habitacional multifamiliar densidad media", cos: 0.70, cus: 2.00, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.5 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.5) },
+    "h-multi-alta": { label: "Habitacional multifamiliar densidad alta", cos: 0.75, cus: 3.50, cav: 0.10, alt: 24, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
+    "corredor-bajo": { label: "Corredor urbano bajo impacto", cos: 0.80, cus: 2.50, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "corredor-medio": { label: "Corredor urbano medio impacto", cos: 0.80, cus: 4.00, cav: 0.10, alt: 30, rf: 5, rl: 3, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
+    "mixto-intenso": { label: "Mixto intenso (centro)", cos: 0.85, cus: 6.00, cav: 0.05, alt: 60, rf: 0, rl: 0, rp: 3, caj: "1 caj/50 m² const.", cajCalc: m=>Math.ceil(m/50) },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 3.00, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+  }},
+  sanpedro: { nombre: "San Pedro Garza García", visor: "https://visorurbano.sanpedro.gob.mx/", zonas: {
+    "h1-aaa": { label: "Habitacional unifamiliar AAA (Valle, Sierra)", cos: 0.40, cus: 0.80, cav: 0.50, alt: 8.5, rf: 5, rl: 3, rp: 5, caj: "3 caj/viv", cajCalc: m=>Math.max(3,Math.ceil(m/200)) },
+    "h1-a": { label: "Habitacional unifamiliar A", cos: 0.50, cus: 1.00, cav: 0.40, alt: 8.5, rf: 4, rl: 2, rp: 4, caj: "2 caj/viv", cajCalc: m=>Math.max(2,Math.ceil(m/180)) },
+    "h1-b": { label: "Habitacional unifamiliar B", cos: 0.60, cus: 1.20, cav: 0.30, alt: 8.5, rf: 3, rl: 1.5, rp: 3, caj: "2 caj/viv", cajCalc: m=>Math.max(2,Math.ceil(m/150)) },
+    "h2": { label: "Habitacional bifamiliar", cos: 0.60, cus: 1.50, cav: 0.25, alt: 9, rf: 3, rl: 1.5, rp: 3, caj: "2 caj/viv (130 m²)", cajCalc: m=>Math.ceil((m/130)*2) },
+    "h3-i": { label: "Habitacional multifamiliar I (baja)", cos: 0.60, cus: 2.00, cav: 0.20, alt: 12, rf: 4, rl: 2, rp: 3, caj: "1.5 caj/viv (100 m²)", cajCalc: m=>Math.ceil((m/100)*1.5) },
+    "h3-ii": { label: "Habitacional multifamiliar II (media)", cos: 0.60, cus: 3.50, cav: 0.20, alt: 24, rf: 5, rl: 3, rp: 3, caj: "1.5 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.5) },
+    "h3-iii": { label: "Habitacional multifamiliar III (alta)", cos: 0.60, cus: 5.00, cav: 0.20, alt: 45, rf: 5, rl: 4, rp: 4, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
+    "ce": { label: "Corredor especial Calzada / Vasconcelos", cos: 0.70, cus: 5.00, cav: 0.15, alt: 60, rf: 5, rl: 3, rp: 4, caj: "1 caj/25 m² const.", cajCalc: m=>Math.ceil(m/25) },
+    "comercial-mixto": { label: "Comercial mixto", cos: 0.70, cus: 3.00, cav: 0.15, alt: 18, rf: 4, rl: 2, rp: 3, caj: "1 caj/25 m² const.", cajCalc: m=>Math.ceil(m/25) },
+    "ladera": { label: "Habitacional de ladera / montaña", cos: 0.30, cus: 0.60, cav: 0.60, alt: 7, rf: 5, rl: 3, rp: 5, caj: "3 caj/viv", cajCalc: m=>Math.max(3,Math.ceil(m/250)) }
+  }},
+  sanicolas: { nombre: "San Nicolás de los Garza", visor: "https://www.sanicolas.gob.mx/", zonas: {
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi-baja": { label: "Habitacional multifamiliar baja", cos: 0.70, cus: 2.10, cav: 0.20, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.25) },
+    "h-multi-alta": { label: "Habitacional multifamiliar alta", cos: 0.75, cus: 3.50, cav: 0.15, alt: 24, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 3.00, cav: 0.10, alt: 18, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+  }},
+  guadalupe: { nombre: "Guadalupe", visor: "https://visorurbano.guadalupe.gob.mx/", zonas: {
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi-media": { label: "Habitacional multifamiliar media", cos: 0.70, cus: 2.00, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.25) },
+    "h-multi-alta": { label: "Habitacional multifamiliar alta", cos: 0.75, cus: 3.00, cav: 0.10, alt: 21, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 3.00, cav: 0.10, alt: 18, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+  }},
+  apodaca: { nombre: "Apodaca", visor: "https://www.apodaca.gob.mx/", zonas: {
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 15, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
+    "industrial-ligero": { label: "Industrial ligero", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) },
+    "industrial-pesado": { label: "Industrial pesado / parque industrial", cos: 0.65, cus: 1.30, cav: 0.25, alt: 15, rf: 7, rl: 5, rp: 5, caj: "1 caj/150 m² const.", cajCalc: m=>Math.ceil(m/150) }
+  }},
+  escobedo: { nombre: "Gral. Escobedo", visor: "https://www.escobedo.gob.mx/", zonas: {
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+  }},
+  santacatarina: { nombre: "Santa Catarina", visor: "https://www.santacatarina.gob.mx/", zonas: {
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 15, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
+    "ladera": { label: "Habitacional de ladera (Sierra Madre)", cos: 0.40, cus: 0.80, cav: 0.50, alt: 7, rf: 5, rl: 3, rp: 5, caj: "2 caj/viv", cajCalc: m=>Math.max(2,Math.ceil(m/200)) },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+  }},
+  garcia: { nombre: "García", visor: "https://www.garcia.gob.mx/", zonas: {
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "industrial": { label: "Industrial / parque industrial", cos: 0.65, cus: 1.30, cav: 0.25, alt: 15, rf: 7, rl: 5, rp: 5, caj: "1 caj/150 m² const.", cajCalc: m=>Math.ceil(m/150) }
+  }},
+  juarez: { nombre: "Juárez", visor: "https://www.juarez-nl.gob.mx/", zonas: {
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+  }}
+};
+
+const centroides = [
+  { id: "monterrey", lat: 25.6714, lng: -100.3094 },
+  { id: "sanpedro", lat: 25.6587, lng: -100.4023 },
+  { id: "sanicolas", lat: 25.7417, lng: -100.2833 },
+  { id: "guadalupe", lat: 25.6775, lng: -100.2597 },
+  { id: "apodaca", lat: 25.7817, lng: -100.1875 },
+  { id: "escobedo", lat: 25.7969, lng: -100.3225 },
+  { id: "santacatarina", lat: 25.6739, lng: -100.4581 },
+  { id: "garcia", lat: 25.8131, lng: -100.5894 },
+  { id: "juarez", lat: 25.6447, lng: -100.0944 }
+];
+
+let coordsActuales = null;
+let estadoActual = {};
+
+document.getElementById('header-fecha').textContent =
+  new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+
+function distancia(lat1, lng1, lat2, lng2) {
+  const dLat = lat1 - lat2;
+  const dLng = lng1 - lng2;
+  return Math.sqrt(dLat * dLat + dLng * dLng);
+}
+
+function detectarMunicipio(lat, lng) {
+  let mc = centroides[0];
+  let md = distancia(lat, lng, mc.lat, mc.lng);
+  for (let i = 1; i < centroides.length; i++) {
+    const d = distancia(lat, lng, centroides[i].lat, centroides[i].lng);
+    if (d < md) { md = d; mc = centroides[i]; }
+  }
+  if (md > 0.3) return null;
+  return mc.id;
+}
+
+function detectarUbicacion() {
+  const status = document.getElementById('ubic-status');
+  const btn = document.getElementById('btn-gps');
+  if (!navigator.geolocation) { status.textContent = 'Tu navegador no soporta GPS'; return; }
+  btn.textContent = 'Detectando…'; btn.disabled = true;
+  status.textContent = 'Solicitando permisos…';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      coordsActuales = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      procesarCoordenadas(coordsActuales.lat, coordsActuales.lng, Math.round(pos.coords.accuracy));
+      btn.textContent = 'Detectar GPS'; btn.disabled = false;
+    },
+    (err) => {
+      let msg = 'Error al obtener ubicación';
+      if (err.code === 1) msg = 'Permiso denegado';
+      else if (err.code === 2) msg = 'Ubicación no disponible';
+      else if (err.code === 3) msg = 'Tiempo agotado';
+      status.textContent = msg;
+      btn.textContent = 'Detectar GPS'; btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function usarCoordsManual() {
+  const lat = parseFloat(document.getElementById('lat-manual').value);
+  const lng = parseFloat(document.getElementById('lng-manual').value);
+  if (isNaN(lat) || isNaN(lng)) {
+    document.getElementById('ubic-status').textContent = 'Ingresa coordenadas válidas';
+    return;
+  }
+  coordsActuales = { lat, lng };
+  procesarCoordenadas(lat, lng, null);
+}
+
+function procesarCoordenadas(lat, lng, precision) {
+  const status = document.getElementById('ubic-status');
+  const coordsTxt = document.getElementById('ubic-coords');
+  const btnVisor = document.getElementById('btn-visor');
+  const munId = detectarMunicipio(lat, lng);
+  if (munId) {
+    document.getElementById('municipio').value = munId;
+    poblarZonas();
+    status.textContent = 'En ' + datos[munId].nombre;
+    btnVisor.style.display = 'inline-flex';
+  } else {
+    status.textContent = 'Fuera de la ZMM';
+    btnVisor.style.display = 'none';
+  }
+  let s = lat.toFixed(5) + '°  ·  ' + lng.toFixed(5) + '°';
+  if (precision) s += '  ·  ±' + precision + ' m';
+  coordsTxt.textContent = s;
+}
+
+function abrirVisor() {
+  const munId = document.getElementById('municipio').value;
+  window.open(datos[munId].visor, '_blank');
+}
+
+const munSel = document.getElementById('municipio');
+const zonaSel = document.getElementById('zona');
+const terrenoIn = document.getElementById('terreno');
+const frenteIn = document.getElementById('frente');
+const fondoIn = document.getElementById('fondo');
+
+function poblarZonas() {
+  const m = datos[munSel.value];
+  zonaSel.innerHTML = '';
+  Object.entries(m.zonas).forEach(([k, v]) => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = v.label;
+    zonaSel.appendChild(opt);
+  });
+  document.getElementById('croquis-mun').textContent = m.nombre;
+  if (coordsActuales) document.getElementById('btn-visor').style.display = 'inline-flex';
+  calcular();
+}
+
+function getCSS(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function dibujarCroquis(frente, fondo, rf, rl, rp, cosArea, cavArea) {
+  const cont = document.getElementById('croquis-container');
+  const contW = Math.max(240, cont.clientWidth - 24);
+  const maxH = 260;
+  const escala = Math.min((contW - 80) / frente, (maxH - 80) / fondo);
+  const wp = frente * escala;
+  const hp = fondo * escala;
+  const dx = rl * escala;
+  const dy = rf * escala;
+  const dw = Math.max(0, wp - 2 * dx);
+  const dh = Math.max(0, hp - dy - rp * escala);
+  const verdeRatio = cavArea > 0 ? Math.min(1, cavArea / (frente * fondo)) : 0;
+  const verdeH = Math.min(verdeRatio * hp, dy);
+  const padding = 44;
+  const svgW = wp + padding * 2;
+  const svgH = hp + padding * 2;
+
+  const cTerreno = getCSS('--terreno');
+  const cTerLine = getCSS('--terreno-line');
+  const cConstr = getCSS('--construido');
+  const cVerde = getCSS('--verde');
+  const cInk2 = getCSS('--ink-2');
+  const cInk3 = getCSS('--ink-3');
+  const cAccent = getCSS('--accent');
+
+  const svg = `
+    <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" style="max-width:${svgW}px;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(${svgW - padding + 6}, ${padding - 18})">
+        <line x1="0" y1="0" x2="0" y2="-12" stroke="${cAccent}" stroke-width="1.4"/>
+        <polygon points="-3,-9 0,-14 3,-9" fill="${cAccent}"/>
+        <text x="0" y="6" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="${cInk3}" font-weight="500">N</text>
+      </g>
+      <rect x="${padding}" y="${padding}" width="${wp}" height="${hp}" fill="${cTerreno}" stroke="${cTerLine}" stroke-width="1.2" rx="2"/>
+      ${verdeH > 0 ? `<rect x="${padding}" y="${padding}" width="${wp}" height="${verdeH}" fill="${cVerde}" opacity="0.9"/>` : ''}
+      ${dw > 0 && dh > 0 ? `<rect x="${padding + dx}" y="${padding + dy}" width="${dw}" height="${dh}" fill="${cConstr}" opacity="0.9" rx="1"/>` : ''}
+      <line x1="${padding}" y1="${padding - 14}" x2="${padding + wp}" y2="${padding - 14}" stroke="${cInk2}" stroke-width="0.5"/>
+      <line x1="${padding}" y1="${padding - 17}" x2="${padding}" y2="${padding - 11}" stroke="${cInk2}" stroke-width="0.5"/>
+      <line x1="${padding + wp}" y1="${padding - 17}" x2="${padding + wp}" y2="${padding - 11}" stroke="${cInk2}" stroke-width="0.5"/>
+      <text x="${padding + wp/2}" y="${padding - 19}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="${cInk2}" font-weight="500">${frente.toFixed(1)} m</text>
+      <line x1="${padding - 14}" y1="${padding}" x2="${padding - 14}" y2="${padding + hp}" stroke="${cInk2}" stroke-width="0.5"/>
+      <line x1="${padding - 17}" y1="${padding}" x2="${padding - 11}" y2="${padding}" stroke="${cInk2}" stroke-width="0.5"/>
+      <line x1="${padding - 17}" y1="${padding + hp}" x2="${padding - 11}" y2="${padding + hp}" stroke="${cInk2}" stroke-width="0.5"/>
+      <text x="${padding - 20}" y="${padding + hp/2}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="${cInk2}" font-weight="500" transform="rotate(-90 ${padding - 20} ${padding + hp/2})">${fondo.toFixed(1)} m</text>
+      ${rf > 0 ? `<text x="${padding + wp - 6}" y="${padding + dy/2 + 3}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="${cInk3}">${rf}m</text>` : ''}
+      ${rp > 0 ? `<text x="${padding + wp - 6}" y="${padding + hp - rp*escala/2 + 3}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="${cInk3}">${rp}m</text>` : ''}
+      ${rl > 0 ? `<text x="${padding + dx/2}" y="${padding + hp - 6}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="${cInk3}">${rl}m</text>` : ''}
+      <line x1="${padding}" y1="${padding + hp + 4}" x2="${padding + wp}" y2="${padding + hp + 4}" stroke="${cAccent}" stroke-width="1.5"/>
+      <text x="${padding + wp/2}" y="${padding + hp + 18}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="${cInk3}" font-weight="500">↑ frente</text>
+    </svg>`;
+  cont.innerHTML = svg;
+}
+
+function calcular() {
+  const m = datos[munSel.value];
+  const z = m.zonas[zonaSel.value];
+  if (!z) return;
+  const ter = parseFloat(terrenoIn.value) || 0;
+  const fr = parseFloat(frenteIn.value) || 0;
+  const fo = parseFloat(fondoIn.value) || 0;
+
+  document.getElementById('zona-actual').textContent = z.label;
+  document.getElementById('cos-val').textContent = z.cos.toFixed(2);
+  document.getElementById('cus-val').textContent = z.cus.toFixed(2);
+  document.getElementById('cav-val').textContent = z.cav.toFixed(2);
+  document.getElementById('alt-val').textContent = z.alt + 'm';
+
+  const desp = ter * z.cos;
+  const constr = ter * z.cus;
+  const verde = ter * z.cav;
+  const niv = Math.floor(z.alt / 3);
+
+  document.getElementById('desplante').textContent = Math.round(desp).toLocaleString();
+  document.getElementById('construccion').textContent = Math.round(constr).toLocaleString();
+  document.getElementById('area-verde').textContent = Math.round(verde).toLocaleString();
+  document.getElementById('niveles').textContent = niv;
+
+  document.getElementById('rem-front').textContent = z.rf + ' m';
+  document.getElementById('rem-lat').textContent = z.rl + ' m';
+  document.getElementById('rem-post').textContent = z.rp + ' m';
+
+  const cajones = z.cajCalc(constr);
+  document.getElementById('cajones-num').textContent = cajones;
+  document.getElementById('cajones-norma').textContent = z.caj;
+
+  dibujarCroquis(fr, fo, z.rf, z.rl, z.rp, desp, verde);
+
+  estadoActual = {
+    municipio: m.nombre, zona: z.label,
+    terreno: ter, frente: fr, fondo: fo,
+    cos: z.cos, cus: z.cus, cav: z.cav, alt: z.alt,
+    desp: Math.round(desp), constr: Math.round(constr), verde: Math.round(verde), niv: niv,
+    rf: z.rf, rl: z.rl, rp: z.rp,
+    cajones: cajones, cajNorma: z.caj,
+    coords: coordsActuales
+  };
+
+  const warn = document.getElementById('warning');
+  const warnTxt = document.getElementById('warning-text');
+  if (z.cos + z.cav > 1) {
+    warn.classList.add('visible');
+    warnTxt.textContent = 'La suma de COS y CAV excede 1.0 — revisar reglamento específico de la zona.';
+  } else if (fr < 7 && z.rl > 0) {
+    warn.classList.add('visible');
+    warnTxt.textContent = 'Frente reducido. Verificar si los remetimientos laterales aplican o requieren dictamen especial.';
+  } else {
+    warn.classList.remove('visible');
+  }
+}
+
+function exportarPDF() {
+  if (!window.jspdf) { alert('Cargando librería PDF, intenta de nuevo.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+  const e = estadoActual;
+  const fecha = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 216, 3, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(13, 17, 23);
+  doc.text('Reporte urbanístico', 20, 22);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(125, 133, 142);
+  doc.text('ZMM · ' + fecha, 20, 28);
+  doc.setDrawColor(232, 234, 237); doc.setLineWidth(0.3);
+  doc.line(20, 34, 196, 34);
+
+  let y = 44;
+  const sec = (titulo) => {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(37, 99, 235);
+    doc.text(titulo, 20, y); y += 6;
+    doc.setTextColor(13, 17, 23); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  };
+  const linea = (k, v) => {
+    doc.setTextColor(125, 133, 142); doc.setFont('helvetica', 'normal');
+    doc.text(k, 20, y);
+    doc.setTextColor(13, 17, 23); doc.setFont('helvetica', 'bold');
+    doc.text(String(v), 90, y); y += 6;
+  };
+
+  sec('Ubicación');
+  linea('Municipio', e.municipio);
+  linea('Zona / uso', e.zona);
+  if (e.coords) linea('Coordenadas GPS', e.coords.lat.toFixed(6) + ', ' + e.coords.lng.toFixed(6));
+  y += 4;
+  sec('Predio');
+  linea('Superficie', e.terreno.toLocaleString() + ' m²');
+  linea('Frente × fondo', e.frente + ' × ' + e.fondo + ' m');
+  y += 4;
+  sec('Coeficientes');
+  linea('COS · Ocupación', e.cos.toFixed(2));
+  linea('CUS · Utilización', e.cus.toFixed(2));
+  linea('CAV · Área verde', e.cav.toFixed(2));
+  linea('Altura máxima', e.alt + ' m');
+  y += 4;
+  sec('Resultados');
+  linea('Desplante máximo', e.desp.toLocaleString() + ' m²');
+  linea('Construcción máxima', e.constr.toLocaleString() + ' m²');
+  linea('Área verde mínima', e.verde.toLocaleString() + ' m²');
+  linea('Niveles aproximados', e.niv + ' niveles a 3 m c/u');
+  y += 4;
+  sec('Remetimientos');
+  linea('Frontal · lateral · posterior', e.rf + ' m  ·  ' + e.rl + ' m  ·  ' + e.rp + ' m');
+  y += 4;
+  sec('Estacionamiento');
+  linea('Norma aplicada', e.cajNorma);
+  linea('Cajones mínimos', e.cajones + ' cajones');
+
+  doc.setDrawColor(13, 17, 23); doc.setLineWidth(0.5);
+  doc.line(20, 250, 196, 250);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(125, 133, 142);
+  doc.text('Reporte referencial para anteproyecto. Verificar siempre con la Constancia de Uso de Suelo oficial', 20, 258);
+  doc.text('del municipio antes de proyecto ejecutivo. Calculadora urbanística ZMM · v 1.1', 20, 263);
+
+  const filename = 'reporte-' + e.municipio.toLowerCase().replace(/[\s.,]+/g, '-') + '-' + new Date().toISOString().slice(0,10) + '.pdf';
+  doc.save(filename);
+}
+
+function resetForm() {
+  terrenoIn.value = 300; frenteIn.value = 15; fondoIn.value = 20;
+  munSel.value = 'monterrey';
+  coordsActuales = null;
+  document.getElementById('ubic-status').textContent = 'Sin detectar';
+  document.getElementById('ubic-coords').textContent = '— · —';
+  document.getElementById('btn-visor').style.display = 'none';
+  document.getElementById('lat-manual').value = '';
+  document.getElementById('lng-manual').value = '';
+  poblarZonas();
+}
+
+munSel.addEventListener('change', poblarZonas);
+zonaSel.addEventListener('change', calcular);
+terrenoIn.addEventListener('input', calcular);
+frenteIn.addEventListener('input', calcular);
+fondoIn.addEventListener('input', calcular);
+let resizeT;
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(calcular, 150); });
+
+poblarZonas();
+</script>
+
+</body>
+</html>
