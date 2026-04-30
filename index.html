@@ -273,6 +273,50 @@ section {
 
 .gps-manual button { grid-column: 1 / -1; }
 
+/* MODE TOGGLE */
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 14px;
+}
+
+.mode-btn {
+  background: transparent;
+  color: var(--ink-2);
+  border: none;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 7px;
+  min-height: 40px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mode-btn:hover { background: rgba(0,0,0,0.04); opacity: 1; }
+.mode-btn.active {
+  background: var(--bg-card);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mode-btn:hover { background: rgba(255,255,255,0.04); }
+  .mode-btn.active { box-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+}
+
+input[readonly] {
+  background: var(--bg-soft);
+  color: var(--ink-2);
+  cursor: default;
+  border-color: var(--line);
+}
+
 /* INPUTS */
 .input-row {
   display: grid;
@@ -761,11 +805,12 @@ footer strong { color: var(--ink); font-weight: 600; }
           <select id="zona"></select>
         </div>
       </div>
-      <div class="input-row cols-3">
-        <div class="field">
-          <label for="terreno">Superficie (m²)</label>
-          <input type="number" id="terreno" value="300" min="1" step="1" inputmode="numeric">
-        </div>
+      <div class="mode-toggle" role="tablist" aria-label="Modo de captura del predio">
+        <button type="button" class="mode-btn active" data-mode="dim" onclick="cambiarModo('dim')">Frente × fondo</button>
+        <button type="button" class="mode-btn" data-mode="area" onclick="cambiarModo('area')">Solo superficie</button>
+      </div>
+
+      <div class="input-row cols-3" id="modo-dim">
         <div class="field">
           <label for="frente">Frente (m)</label>
           <input type="number" id="frente" value="15" min="1" step="0.1" inputmode="decimal">
@@ -773,6 +818,27 @@ footer strong { color: var(--ink); font-weight: 600; }
         <div class="field">
           <label for="fondo">Fondo (m)</label>
           <input type="number" id="fondo" value="20" min="1" step="0.1" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="terreno-calc">Superficie (m²)</label>
+          <input type="number" id="terreno-calc" value="300" readonly tabindex="-1">
+        </div>
+      </div>
+
+      <div class="input-row cols-2" id="modo-area" style="display:none">
+        <div class="field">
+          <label for="terreno-area">Superficie (m²)</label>
+          <input type="number" id="terreno-area" value="300" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="proporcion">Proporción frente:fondo</label>
+          <select id="proporcion">
+            <option value="0.75">3 : 4 (frente angosto)</option>
+            <option value="1">1 : 1 (cuadrado)</option>
+            <option value="0.6">3 : 5 (típico)</option>
+            <option value="0.5">1 : 2 (alargado)</option>
+            <option value="1.33">4 : 3 (frente ancho)</option>
+          </select>
         </div>
       </div>
     </div>
@@ -876,7 +942,7 @@ footer strong { color: var(--ink); font-weight: 600; }
   <footer>
     <div>Los coeficientes mostrados son referenciales para anteproyecto. Antes de proyecto ejecutivo, verificar con la Constancia de Uso de Suelo oficial del municipio. La detección por GPS usa centroides aproximados; en colindancias puede asignar al municipio vecino.</div>
     <div class="footer-credit">
-      <span><strong>Calculadora ZMM</strong> · v 1.1</span>
+      <span><strong>Calculadora ZMM</strong> · v 1.2</span>
       <span>Mobile-first</span>
     </div>
   </footer>
@@ -886,78 +952,78 @@ footer strong { color: var(--ink); font-weight: 600; }
 <script>
 const datos = {
   monterrey: { nombre: "Monterrey", visor: "https://www.implancmty.org/visor/", zonas: {
-    "h-uni-baja": { label: "Habitacional unifamiliar densidad baja", cos: 0.60, cus: 1.20, cav: 0.30, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (120 m²)", cajCalc: m=>Math.ceil(m/120) },
-    "h-uni-media": { label: "Habitacional unifamiliar densidad media", cos: 0.70, cus: 1.60, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi-media": { label: "Habitacional multifamiliar densidad media", cos: 0.70, cus: 2.00, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.5 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.5) },
-    "h-multi-alta": { label: "Habitacional multifamiliar densidad alta", cos: 0.75, cus: 3.50, cav: 0.10, alt: 24, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
-    "corredor-bajo": { label: "Corredor urbano bajo impacto", cos: 0.80, cus: 2.50, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "corredor-medio": { label: "Corredor urbano medio impacto", cos: 0.80, cus: 4.00, cav: 0.10, alt: 30, rf: 5, rl: 3, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
-    "mixto-intenso": { label: "Mixto intenso (centro)", cos: 0.85, cus: 6.00, cav: 0.05, alt: 60, rf: 0, rl: 0, rp: 3, caj: "1 caj/50 m² const.", cajCalc: m=>Math.ceil(m/50) },
-    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 3.00, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
-    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+    "h-uni-baja": { label: "Habitacional unifamiliar densidad baja", cos: 0.60, cus: 1.20, cav: 0.30, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-uni-media": { label: "Habitacional unifamiliar densidad media", cos: 0.70, cus: 1.60, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi-media": { label: "Habitacional multifamiliar densidad media", cos: 0.70, cus: 2.00, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.5 caj/depto · 90 m² c/u", cajTipo: "multi", cajPorViv: 1.5, areaViv: 90 },
+    "h-multi-alta": { label: "Habitacional multifamiliar densidad alta", cos: 0.75, cus: 3.50, cav: 0.10, alt: 24, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/depto · 80 m² c/u", cajTipo: "multi", cajPorViv: 1.5, areaViv: 80 },
+    "corredor-bajo": { label: "Corredor urbano bajo impacto", cos: 0.80, cus: 2.50, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "corredor-medio": { label: "Corredor urbano medio impacto", cos: 0.80, cus: 4.00, cav: 0.10, alt: 30, rf: 5, rl: 3, rp: 3, caj: "1 caj / 30 m² const.", cajTipo: "const", cajM2: 30 },
+    "mixto-intenso": { label: "Mixto intenso (centro)", cos: 0.85, cus: 6.00, cav: 0.05, alt: 60, rf: 0, rl: 0, rp: 3, caj: "1 caj / 50 m² const.", cajTipo: "const", cajM2: 50 },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 3.00, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 30 m² const.", cajTipo: "const", cajM2: 30 },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj / 100 m² const.", cajTipo: "const", cajM2: 100 }
   }},
   sanpedro: { nombre: "San Pedro Garza García", visor: "https://visorurbano.sanpedro.gob.mx/", zonas: {
-    "h1-aaa": { label: "Habitacional unifamiliar AAA (Valle, Sierra)", cos: 0.40, cus: 0.80, cav: 0.50, alt: 8.5, rf: 5, rl: 3, rp: 5, caj: "3 caj/viv", cajCalc: m=>Math.max(3,Math.ceil(m/200)) },
-    "h1-a": { label: "Habitacional unifamiliar A", cos: 0.50, cus: 1.00, cav: 0.40, alt: 8.5, rf: 4, rl: 2, rp: 4, caj: "2 caj/viv", cajCalc: m=>Math.max(2,Math.ceil(m/180)) },
-    "h1-b": { label: "Habitacional unifamiliar B", cos: 0.60, cus: 1.20, cav: 0.30, alt: 8.5, rf: 3, rl: 1.5, rp: 3, caj: "2 caj/viv", cajCalc: m=>Math.max(2,Math.ceil(m/150)) },
-    "h2": { label: "Habitacional bifamiliar", cos: 0.60, cus: 1.50, cav: 0.25, alt: 9, rf: 3, rl: 1.5, rp: 3, caj: "2 caj/viv (130 m²)", cajCalc: m=>Math.ceil((m/130)*2) },
-    "h3-i": { label: "Habitacional multifamiliar I (baja)", cos: 0.60, cus: 2.00, cav: 0.20, alt: 12, rf: 4, rl: 2, rp: 3, caj: "1.5 caj/viv (100 m²)", cajCalc: m=>Math.ceil((m/100)*1.5) },
-    "h3-ii": { label: "Habitacional multifamiliar II (media)", cos: 0.60, cus: 3.50, cav: 0.20, alt: 24, rf: 5, rl: 3, rp: 3, caj: "1.5 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.5) },
-    "h3-iii": { label: "Habitacional multifamiliar III (alta)", cos: 0.60, cus: 5.00, cav: 0.20, alt: 45, rf: 5, rl: 4, rp: 4, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
-    "ce": { label: "Corredor especial Calzada / Vasconcelos", cos: 0.70, cus: 5.00, cav: 0.15, alt: 60, rf: 5, rl: 3, rp: 4, caj: "1 caj/25 m² const.", cajCalc: m=>Math.ceil(m/25) },
-    "comercial-mixto": { label: "Comercial mixto", cos: 0.70, cus: 3.00, cav: 0.15, alt: 18, rf: 4, rl: 2, rp: 3, caj: "1 caj/25 m² const.", cajCalc: m=>Math.ceil(m/25) },
-    "ladera": { label: "Habitacional de ladera / montaña", cos: 0.30, cus: 0.60, cav: 0.60, alt: 7, rf: 5, rl: 3, rp: 5, caj: "3 caj/viv", cajCalc: m=>Math.max(3,Math.ceil(m/250)) }
+    "h1-aaa": { label: "Habitacional unifamiliar AAA (Valle, Sierra)", cos: 0.40, cus: 0.80, cav: 0.50, alt: 8.5, rf: 5, rl: 3, rp: 5, caj: "3 caj/vivienda", cajTipo: "uni", cajPorViv: 3 },
+    "h1-a": { label: "Habitacional unifamiliar A", cos: 0.50, cus: 1.00, cav: 0.40, alt: 8.5, rf: 4, rl: 2, rp: 4, caj: "2 caj/vivienda", cajTipo: "uni", cajPorViv: 2 },
+    "h1-b": { label: "Habitacional unifamiliar B", cos: 0.60, cus: 1.20, cav: 0.30, alt: 8.5, rf: 3, rl: 1.5, rp: 3, caj: "2 caj/vivienda", cajTipo: "uni", cajPorViv: 2 },
+    "h2": { label: "Habitacional bifamiliar", cos: 0.60, cus: 1.50, cav: 0.25, alt: 9, rf: 3, rl: 1.5, rp: 3, caj: "2 caj/vivienda (×2)", cajTipo: "uni", cajPorViv: 4 },
+    "h3-i": { label: "Habitacional multifamiliar I (baja)", cos: 0.60, cus: 2.00, cav: 0.20, alt: 12, rf: 4, rl: 2, rp: 3, caj: "1.5 caj/depto · 100 m² c/u", cajTipo: "multi", cajPorViv: 1.5, areaViv: 100 },
+    "h3-ii": { label: "Habitacional multifamiliar II (media)", cos: 0.60, cus: 3.50, cav: 0.20, alt: 24, rf: 5, rl: 3, rp: 3, caj: "1.5 caj/depto · 90 m² c/u", cajTipo: "multi", cajPorViv: 1.5, areaViv: 90 },
+    "h3-iii": { label: "Habitacional multifamiliar III (alta)", cos: 0.60, cus: 5.00, cav: 0.20, alt: 45, rf: 5, rl: 4, rp: 4, caj: "1.5 caj/depto · 80 m² c/u", cajTipo: "multi", cajPorViv: 1.5, areaViv: 80 },
+    "ce": { label: "Corredor especial Calzada / Vasconcelos", cos: 0.70, cus: 5.00, cav: 0.15, alt: 60, rf: 5, rl: 3, rp: 4, caj: "1 caj / 25 m² const.", cajTipo: "const", cajM2: 25 },
+    "comercial-mixto": { label: "Comercial mixto", cos: 0.70, cus: 3.00, cav: 0.15, alt: 18, rf: 4, rl: 2, rp: 3, caj: "1 caj / 25 m² const.", cajTipo: "const", cajM2: 25 },
+    "ladera": { label: "Habitacional de ladera / montaña", cos: 0.30, cus: 0.60, cav: 0.60, alt: 7, rf: 5, rl: 3, rp: 5, caj: "3 caj/vivienda", cajTipo: "uni", cajPorViv: 3 }
   }},
   sanicolas: { nombre: "San Nicolás de los Garza", visor: "https://www.sanicolas.gob.mx/", zonas: {
-    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi-baja": { label: "Habitacional multifamiliar baja", cos: 0.70, cus: 2.10, cav: 0.20, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.25) },
-    "h-multi-alta": { label: "Habitacional multifamiliar alta", cos: 0.75, cus: 3.50, cav: 0.15, alt: 24, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
-    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 3.00, cav: 0.10, alt: 18, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
-    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi-baja": { label: "Habitacional multifamiliar baja", cos: 0.70, cus: 2.10, cav: 0.20, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/depto · 90 m² c/u", cajTipo: "multi", cajPorViv: 1.25, areaViv: 90 },
+    "h-multi-alta": { label: "Habitacional multifamiliar alta", cos: 0.75, cus: 3.50, cav: 0.15, alt: 24, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/depto · 80 m² c/u", cajTipo: "multi", cajPorViv: 1.5, areaViv: 80 },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 3.00, cav: 0.10, alt: 18, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj / 30 m² const.", cajTipo: "const", cajM2: 30 },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj / 100 m² const.", cajTipo: "const", cajM2: 100 }
   }},
   guadalupe: { nombre: "Guadalupe", visor: "https://visorurbano.guadalupe.gob.mx/", zonas: {
-    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi-media": { label: "Habitacional multifamiliar media", cos: 0.70, cus: 2.00, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (90 m²)", cajCalc: m=>Math.ceil((m/90)*1.25) },
-    "h-multi-alta": { label: "Habitacional multifamiliar alta", cos: 0.75, cus: 3.00, cav: 0.10, alt: 21, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/viv (80 m²)", cajCalc: m=>Math.ceil((m/80)*1.5) },
-    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 3.00, cav: 0.10, alt: 18, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
-    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi-media": { label: "Habitacional multifamiliar media", cos: 0.70, cus: 2.00, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/depto · 90 m² c/u", cajTipo: "multi", cajPorViv: 1.25, areaViv: 90 },
+    "h-multi-alta": { label: "Habitacional multifamiliar alta", cos: 0.75, cus: 3.00, cav: 0.10, alt: 21, rf: 4, rl: 3, rp: 3, caj: "1.5 caj/depto · 80 m² c/u", cajTipo: "multi", cajPorViv: 1.5, areaViv: 80 },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 3.00, cav: 0.10, alt: 18, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 30 m² const.", cajTipo: "const", cajM2: 30 },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj / 100 m² const.", cajTipo: "const", cajM2: 100 }
   }},
   apodaca: { nombre: "Apodaca", visor: "https://www.apodaca.gob.mx/", zonas: {
-    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 15, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
-    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
-    "industrial-ligero": { label: "Industrial ligero", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) },
-    "industrial-pesado": { label: "Industrial pesado / parque industrial", cos: 0.65, cus: 1.30, cav: 0.25, alt: 15, rf: 7, rl: 5, rp: 5, caj: "1 caj/150 m² const.", cajCalc: m=>Math.ceil(m/150) }
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 15, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/depto · 85 m² c/u", cajTipo: "multi", cajPorViv: 1.25, areaViv: 85 },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj / 30 m² const.", cajTipo: "const", cajM2: 30 },
+    "industrial-ligero": { label: "Industrial ligero", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj / 100 m² const.", cajTipo: "const", cajM2: 100 },
+    "industrial-pesado": { label: "Industrial pesado / parque industrial", cos: 0.65, cus: 1.30, cav: 0.25, alt: 15, rf: 7, rl: 5, rp: 5, caj: "1 caj / 150 m² const.", cajTipo: "const", cajM2: 150 }
   }},
   escobedo: { nombre: "Gral. Escobedo", visor: "https://www.escobedo.gob.mx/", zonas: {
-    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
-    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
-    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/depto · 85 m² c/u", cajTipo: "multi", cajPorViv: 1.25, areaViv: 85 },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj / 30 m² const.", cajTipo: "const", cajM2: 30 },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj / 100 m² const.", cajTipo: "const", cajM2: 100 }
   }},
   santacatarina: { nombre: "Santa Catarina", visor: "https://www.santacatarina.gob.mx/", zonas: {
-    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 15, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
-    "ladera": { label: "Habitacional de ladera (Sierra Madre)", cos: 0.40, cus: 0.80, cav: 0.50, alt: 7, rf: 5, rl: 3, rp: 5, caj: "2 caj/viv", cajCalc: m=>Math.max(2,Math.ceil(m/200)) },
-    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj/30 m² const.", cajCalc: m=>Math.ceil(m/30) },
-    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 15, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/depto · 85 m² c/u", cajTipo: "multi", cajPorViv: 1.25, areaViv: 85 },
+    "ladera": { label: "Habitacional de ladera (Sierra Madre)", cos: 0.40, cus: 0.80, cav: 0.50, alt: 7, rf: 5, rl: 3, rp: 5, caj: "2 caj/vivienda", cajTipo: "uni", cajPorViv: 2 },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "comercial": { label: "Comercial y servicios", cos: 0.80, cus: 2.40, cav: 0.10, alt: 12, rf: 3, rl: 0, rp: 3, caj: "1 caj / 30 m² const.", cajTipo: "const", cajM2: 30 },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj / 100 m² const.", cajTipo: "const", cajM2: 100 }
   }},
   garcia: { nombre: "García", visor: "https://www.garcia.gob.mx/", zonas: {
-    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
-    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "industrial": { label: "Industrial / parque industrial", cos: 0.65, cus: 1.30, cav: 0.25, alt: 15, rf: 7, rl: 5, rp: 5, caj: "1 caj/150 m² const.", cajCalc: m=>Math.ceil(m/150) }
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/depto · 85 m² c/u", cajTipo: "multi", cajPorViv: 1.25, areaViv: 85 },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "industrial": { label: "Industrial / parque industrial", cos: 0.65, cus: 1.30, cav: 0.25, alt: 15, rf: 7, rl: 5, rp: 5, caj: "1 caj / 150 m² const.", cajTipo: "const", cajM2: 150 }
   }},
   juarez: { nombre: "Juárez", visor: "https://www.juarez-nl.gob.mx/", zonas: {
-    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/viv (100 m²)", cajCalc: m=>Math.ceil(m/100) },
-    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/viv (85 m²)", cajCalc: m=>Math.ceil((m/85)*1.25) },
-    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj/40 m² const.", cajCalc: m=>Math.ceil(m/40) },
-    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj/100 m² const.", cajCalc: m=>Math.ceil(m/100) }
+    "h-uni": { label: "Habitacional unifamiliar", cos: 0.70, cus: 1.40, cav: 0.20, alt: 9, rf: 3, rl: 0, rp: 3, caj: "1 caj/vivienda", cajTipo: "uni", cajPorViv: 1 },
+    "h-multi": { label: "Habitacional multifamiliar", cos: 0.70, cus: 2.10, cav: 0.15, alt: 12, rf: 3, rl: 2, rp: 3, caj: "1.25 caj/depto · 85 m² c/u", cajTipo: "multi", cajPorViv: 1.25, areaViv: 85 },
+    "corredor": { label: "Corredor urbano", cos: 0.80, cus: 2.40, cav: 0.10, alt: 15, rf: 3, rl: 0, rp: 3, caj: "1 caj / 40 m² const.", cajTipo: "const", cajM2: 40 },
+    "industrial": { label: "Industrial", cos: 0.70, cus: 1.40, cav: 0.20, alt: 12, rf: 5, rl: 3, rp: 3, caj: "1 caj / 100 m² const.", cajTipo: "const", cajM2: 100 }
   }}
 };
 
@@ -1057,9 +1123,6 @@ function abrirVisor() {
 
 const munSel = document.getElementById('municipio');
 const zonaSel = document.getElementById('zona');
-const terrenoIn = document.getElementById('terreno');
-const frenteIn = document.getElementById('frente');
-const fondoIn = document.getElementById('fondo');
 
 function poblarZonas() {
   const m = datos[munSel.value];
@@ -1131,13 +1194,78 @@ function dibujarCroquis(frente, fondo, rf, rl, rp, cosArea, cavArea) {
   cont.innerHTML = svg;
 }
 
+function calcularCajones(z, ter, constr) {
+  if (z.cajTipo === "uni") {
+    return { num: z.cajPorViv, detalle: '1 vivienda × ' + z.cajPorViv + ' caj' };
+  }
+  if (z.cajTipo === "multi") {
+    const viviendas = Math.max(1, Math.floor(constr / z.areaViv));
+    const num = Math.ceil(viviendas * z.cajPorViv);
+    return { num: num, detalle: viviendas + ' deptos × ' + z.cajPorViv + ' caj' };
+  }
+  if (z.cajTipo === "const") {
+    const num = Math.ceil(constr / z.cajM2);
+    return { num: num, detalle: Math.round(constr) + ' m² ÷ ' + z.cajM2 };
+  }
+  return { num: 0, detalle: '—' };
+}
+
+let modoActual = 'dim';
+let ultimaSuperficie = 300;
+
+function cambiarModo(modo) {
+  modoActual = modo;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === modo);
+  });
+  document.getElementById('modo-dim').style.display = modo === 'dim' ? '' : 'none';
+  document.getElementById('modo-area').style.display = modo === 'area' ? '' : 'none';
+
+  if (modo === 'dim') {
+    actualizarSuperficieDesdeDimensiones();
+  } else {
+    document.getElementById('terreno-area').value = ultimaSuperficie;
+  }
+  calcular();
+}
+
+function actualizarSuperficieDesdeDimensiones() {
+  const fr = parseFloat(document.getElementById('frente').value) || 0;
+  const fo = parseFloat(document.getElementById('fondo').value) || 0;
+  const sup = fr * fo;
+  document.getElementById('terreno-calc').value = Math.round(sup);
+  ultimaSuperficie = sup;
+}
+
+function actualizarDimensionesDesdeArea() {
+  const sup = parseFloat(document.getElementById('terreno-area').value) || 0;
+  const prop = parseFloat(document.getElementById('proporcion').value) || 1;
+  // sup = frente × fondo, frente = prop × fondo  →  fondo = sqrt(sup/prop)
+  const fondo = Math.sqrt(sup / prop);
+  const frente = prop * fondo;
+  ultimaSuperficie = sup;
+  return { sup, frente, fondo };
+}
+
+function obtenerDatosPredio() {
+  if (modoActual === 'dim') {
+    actualizarSuperficieDesdeDimensiones();
+    return {
+      ter: ultimaSuperficie,
+      fr: parseFloat(document.getElementById('frente').value) || 0,
+      fo: parseFloat(document.getElementById('fondo').value) || 0
+    };
+  } else {
+    const d = actualizarDimensionesDesdeArea();
+    return { ter: d.sup, fr: d.frente, fo: d.fondo };
+  }
+}
+
 function calcular() {
   const m = datos[munSel.value];
   const z = m.zonas[zonaSel.value];
   if (!z) return;
-  const ter = parseFloat(terrenoIn.value) || 0;
-  const fr = parseFloat(frenteIn.value) || 0;
-  const fo = parseFloat(fondoIn.value) || 0;
+  const { ter, fr, fo } = obtenerDatosPredio();
 
   document.getElementById('zona-actual').textContent = z.label;
   document.getElementById('cos-val').textContent = z.cos.toFixed(2);
@@ -1159,19 +1287,19 @@ function calcular() {
   document.getElementById('rem-lat').textContent = z.rl + ' m';
   document.getElementById('rem-post').textContent = z.rp + ' m';
 
-  const cajones = z.cajCalc(constr);
-  document.getElementById('cajones-num').textContent = cajones;
-  document.getElementById('cajones-norma').textContent = z.caj;
+  const caj = calcularCajones(z, ter, constr);
+  document.getElementById('cajones-num').textContent = caj.num;
+  document.getElementById('cajones-norma').textContent = z.caj + ' · ' + caj.detalle;
 
   dibujarCroquis(fr, fo, z.rf, z.rl, z.rp, desp, verde);
 
   estadoActual = {
     municipio: m.nombre, zona: z.label,
-    terreno: ter, frente: fr, fondo: fo,
+    terreno: Math.round(ter), frente: +fr.toFixed(2), fondo: +fo.toFixed(2),
     cos: z.cos, cus: z.cus, cav: z.cav, alt: z.alt,
     desp: Math.round(desp), constr: Math.round(constr), verde: Math.round(verde), niv: niv,
     rf: z.rf, rl: z.rl, rp: z.rp,
-    cajones: cajones, cajNorma: z.caj,
+    cajones: caj.num, cajNorma: z.caj, cajDetalle: caj.detalle,
     coords: coordsActuales
   };
 
@@ -1243,22 +1371,28 @@ function exportarPDF() {
   y += 4;
   sec('Estacionamiento');
   linea('Norma aplicada', e.cajNorma);
+  linea('Detalle del cálculo', e.cajDetalle);
   linea('Cajones mínimos', e.cajones + ' cajones');
 
   doc.setDrawColor(13, 17, 23); doc.setLineWidth(0.5);
   doc.line(20, 250, 196, 250);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(125, 133, 142);
   doc.text('Reporte referencial para anteproyecto. Verificar siempre con la Constancia de Uso de Suelo oficial', 20, 258);
-  doc.text('del municipio antes de proyecto ejecutivo. Calculadora urbanística ZMM · v 1.1', 20, 263);
+  doc.text('del municipio antes de proyecto ejecutivo. Calculadora urbanística ZMM · v 1.2', 20, 263);
 
   const filename = 'reporte-' + e.municipio.toLowerCase().replace(/[\s.,]+/g, '-') + '-' + new Date().toISOString().slice(0,10) + '.pdf';
   doc.save(filename);
 }
 
 function resetForm() {
-  terrenoIn.value = 300; frenteIn.value = 15; fondoIn.value = 20;
+  document.getElementById('frente').value = 15;
+  document.getElementById('fondo').value = 20;
+  document.getElementById('terreno-area').value = 300;
+  document.getElementById('terreno-calc').value = 300;
+  ultimaSuperficie = 300;
   munSel.value = 'monterrey';
   coordsActuales = null;
+  cambiarModo('dim');
   document.getElementById('ubic-status').textContent = 'Sin detectar';
   document.getElementById('ubic-coords').textContent = '— · —';
   document.getElementById('btn-visor').style.display = 'none';
@@ -1269,9 +1403,10 @@ function resetForm() {
 
 munSel.addEventListener('change', poblarZonas);
 zonaSel.addEventListener('change', calcular);
-terrenoIn.addEventListener('input', calcular);
-frenteIn.addEventListener('input', calcular);
-fondoIn.addEventListener('input', calcular);
+document.getElementById('frente').addEventListener('input', calcular);
+document.getElementById('fondo').addEventListener('input', calcular);
+document.getElementById('terreno-area').addEventListener('input', calcular);
+document.getElementById('proporcion').addEventListener('change', calcular);
 let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(calcular, 150); });
 
