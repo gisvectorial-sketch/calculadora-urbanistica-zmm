@@ -6,6 +6,8 @@
 <meta name="description" content="Calculadora de coeficientes urbanísticos para Monterrey y municipios conurbados. COS, CUS, CAV, altura máxima, cajones de estacionamiento.">
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
+
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect x="20" y="20" width="360" height="360" fill="%232a2d33"/><rect x="34" y="34" width="332" height="332" fill="%23f7f5f0"/><text x="200" y="248" font-family="Arial,sans-serif" font-size="180" font-weight="600" fill="%232a2d33" text-anchor="middle">AC</text><line x1="120" y1="290" x2="280" y2="290" stroke="%23e07856" stroke-width="6"/></svg>'>
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Coeficientes urbanísticos · Arq. Alvaro Chapa Villarreal</title>
 
@@ -100,18 +102,23 @@ body {
 }
 
 .pro-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 0.02em;
+  width: 60px;
+  height: 60px;
   flex-shrink: 0;
+  display: block;
+  line-height: 0;
+}
+
+.pro-avatar svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pro-avatar svg rect:first-of-type { fill: #f7f5f0; }
+  .pro-avatar svg rect:nth-of-type(2) { fill: #2a2d33; }
+  .pro-avatar svg text { fill: #f7f5f0; }
 }
 
 .pro-info {
@@ -845,7 +852,15 @@ footer strong { color: var(--ink); font-weight: 600; }
   <header class="pro-header">
     <div class="pro-header-inner">
       <div class="pro-identity">
-        <div class="pro-avatar">AC</div>
+        <div class="pro-avatar" aria-label="AC Arquitectura">
+          <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+            <rect x="40" y="40" width="320" height="320" fill="#2a2d33"/>
+            <rect x="54" y="54" width="292" height="292" fill="#f7f5f0"/>
+            <text x="200" y="218" font-family="Inter, system-ui, sans-serif" font-size="138" font-weight="500" fill="#2a2d33" text-anchor="middle" letter-spacing="-6">AC</text>
+            <line x1="100" y1="245" x2="300" y2="245" stroke="#e07856" stroke-width="2.5"/>
+            <text x="200" y="285" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="500" fill="#2a2d33" text-anchor="middle" letter-spacing="5">ARQUITECTURA</text>
+          </svg>
+        </div>
         <div class="pro-info">
           <div class="pro-name">Arq. Alvaro Chapa Villarreal</div>
           <div class="pro-meta">
@@ -1090,7 +1105,7 @@ footer strong { color: var(--ink); font-weight: 600; }
     <div>Los coeficientes mostrados son referenciales para anteproyecto. Antes de proyecto ejecutivo, verificar con la Constancia de Uso de Suelo oficial del municipio. La detección por GPS usa centroides aproximados; en colindancias puede asignar al municipio vecino.</div>
     <div class="footer-credit">
       <span><strong>Arq. Alvaro Chapa Villarreal</strong> · Cédula Prof. 2531610</span>
-      <span>v 1.5</span>
+      <span>v 1.6</span>
     </div>
   </footer>
 
@@ -1540,20 +1555,32 @@ function exportarPDF() {
   const fecha = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // Header limpio con identidad profesional
-  // Avatar circle (negro)
-  doc.setFillColor(13, 17, 23);
-  doc.circle(26, 18, 6, 'F');
+  // Sello AC ARQUITECTURA (cuadrado, paleta grafito + crema + coral)
+  // Marco grafito exterior
+  doc.setFillColor(42, 45, 51);
+  doc.rect(20, 11, 13, 13, 'F');
+  // Fondo crema interior
+  doc.setFillColor(247, 245, 240);
+  doc.rect(20.6, 11.6, 11.8, 11.8, 'F');
+  // Iniciales AC
   doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text('AC', 26, 19.5, { align: 'center' });
+  doc.setTextColor(42, 45, 51);
+  doc.text('AC', 26.5, 18, { align: 'center' });
+  // Línea coral
+  doc.setDrawColor(224, 120, 86); doc.setLineWidth(0.3);
+  doc.line(22, 19.2, 31, 19.2);
+  // Palabra ARQUITECTURA debajo
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(2.6);
+  doc.setTextColor(42, 45, 51);
+  doc.text('ARQUITECTURA', 26.5, 21.5, { align: 'center', charSpace: 0.5 });
 
   // Nombre y datos
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
   doc.setTextColor(13, 17, 23);
-  doc.text('Arq. Alvaro Chapa Villarreal', 36, 16);
+  doc.text('Arq. Alvaro Chapa Villarreal', 38, 16);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
   doc.setTextColor(125, 133, 142);
-  doc.text('WhatsApp 81 2289 4100  ·  Cédula Prof. 2531610', 36, 21);
+  doc.text('WhatsApp 81 2289 4100  ·  Cédula Prof. 2531610', 38, 21);
 
   // Badge derecha (azul suave)
   doc.setFillColor(239, 244, 255);
